@@ -1,0 +1,15 @@
+{
+  "name": "polkadot-scripts",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "license": "LGPL-3.0-or-later",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@polkadot/api": "^10.12.4",
+    "ethers": "^5.0.0",
+    "node-fetch": "2",
+    "yargs": "^17.6.0"
+  }
+}
