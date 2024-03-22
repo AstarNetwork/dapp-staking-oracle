@@ -30,7 +30,11 @@ Once median is calculated, it will be submitted on-chain via a signed transactio
 
 ## Running
 
-_WIP_
+First make sure to prepare the configuration file that will be used.
+
+Install all of the required dependencies with `yarn install`.
+
+Run the program with `yarn start -c <path-to-config-file>`.
 
 ## Config
 
