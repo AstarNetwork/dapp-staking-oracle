@@ -37,6 +37,8 @@ _WIP_
 `config.json` contains various parameters used to configure the service.
 The URL parameters are self explanatory - depending on whether communication with L1 node via https or wss is needed, different endpoints can be provided. For L2, only single endpoint is needed.
 
+The `network` parameter specifies which network is being fed the price values. Only supported options are `Astar` and `Shiden` (case-insensitive). For `Shibuya`, user should still use `Astar` as the parameter.
+
 The `updateCadenceHours` parameter specifies how often should new price feed be checked, and potentially updated.
 
 The `nativeCurrencySymbol` is used to specify on-chain enum value of the native currency ticker, e.g. `ASTR` or `SDN`.

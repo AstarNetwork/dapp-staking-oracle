@@ -1,4 +1,5 @@
 {
+    "network": "astar",
     "astarApiURL": "https://api.astar.network/api/v1/token/price/astr",
     "diaApiURL": "https://api.diadata.org/v1/assetQuotation/Astar/0x0000000000000000000000000000000000000000",
     "L1RpcEndpoint": "https://rpc.astar.network",

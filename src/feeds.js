@@ -6,10 +6,8 @@ const ACURAST_L2_ABI = require('../res/acurastL2Abi.json');
 // Found here: https://github.com/pyth-network/pyth-crosschain/tree/main/target_chains/ethereum/sdk/solidity
 const PYTH_L2_ABI = require('../res/pythL2Abi.json');
 
-const config = require('../config.json');
-
 // Fetches the price from the Astar Foundation maintained API.
-async function fetchAstarApiPrice() {
+async function fetchAstarApiPrice(config) {
   try {
     const response = await fetch(config.astarApiURL);
     const price = await response.json();
@@ -30,7 +28,7 @@ async function fetchAstarApiPrice() {
 // Fetches the price from the DIA API.
 //
 // It's unknown how reliable this is and whether we should even use it.
-async function fetchDiaApiPrice() {
+async function fetchDiaApiPrice(config) {
   try {
     const response = await fetch(config.diaApiURL);
     const data = await response.json();
@@ -51,12 +49,12 @@ async function fetchDiaApiPrice() {
 }
 
 // Fetches the price from the L1 on-chain Band oracle.
-async function fetchBandL1Price() {
+async function fetchBandL1Price(config) {
   try {
     const provider = new ethers.providers.JsonRpcProvider(config.L1RpcEndpoint);
     const contract = new ethers.Contract('0xDA7a001b254CD22e46d3eAB04d937489c93174C3', BAND_L1_ABI, provider);
 
-    const result = await contract.getReferenceData('ASTR', 'USD');
+    const result = await contract.getReferenceData(config.nativeCurrencySymbol, 'USD');
 
     // From the Band documentation
     const DECIMALS = 1_000_000_000_000_000_000;
@@ -80,7 +78,7 @@ async function fetchBandL1Price() {
 // Fetches the price from the on-chain Acurast oracle
 //
 // NOTE: doesn't work, maybe ABI or address are wrong
-async function fetchAcurastL2Price() {
+async function fetchAcurastL2Price(config) {
   const provider = new ethers.providers.JsonRpcProvider(config.L2RpcEndpoint);
   const contract = new ethers.Contract('0xde4F97786EAB4e47b96A0A65EdD7755895077073', ACURAST_L2_ABI, provider);
 
@@ -92,7 +90,7 @@ async function fetchAcurastL2Price() {
 // Fetches the price from the L2 on-chain Pyth oracle.
 //
 // NOTE: Works but not for latest price since it's often marked as stale.
-async function fetchPythL2Price() {
+async function fetchPythL2Price(config) {
   try {
     const provider = new ethers.providers.JsonRpcProvider(config.L2RpcEndpoint);
     const contract = new ethers.Contract('0xA2aa501b19aff244D90cc15a4Cf739D2725B5729', PYTH_L2_ABI, provider);
@@ -119,15 +117,24 @@ async function fetchPythL2Price() {
   }
 }
 
-async function getAstrFeeds() {
+async function getAstrFeeds(config) {
     const astrFeeds = [
-        fetchAstarApiPrice(),
-        fetchDiaApiPrice(),
-        fetchBandL1Price(),
-        fetchPythL2Price()
+        fetchAstarApiPrice(config),
+        fetchDiaApiPrice(config),
+        fetchBandL1Price(config),
+        fetchPythL2Price(config)
     ];
     
     return Promise.all(astrFeeds);
 }
 
-module.exports = getAstrFeeds;
+async function getSdnFeeds(config) {
+  const sdnFeeds = [
+      fetchAstarApiPrice(config),
+      fetchDiaApiPrice(config),
+  ];
+  
+  return Promise.all(sdnFeeds);
+}
+
+module.exports = {getAstrFeeds, getSdnFeeds};

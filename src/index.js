@@ -1,12 +1,21 @@
-const getAstrFeeds = require('./astar')
-const config = require('../config.json');
+const {getAstrFeeds, getSdnFeeds} = require('./feeds')
 const { getAccount, sendAndFinalize} = require('./utils')
 
 const { ApiPromise, WsProvider } = require("@polkadot/api");
+const yargs = require("yargs");
+const path = require('path');
 
-async function getPrice() {
+async function getPrice(config) {
     // 1. Get the price feeds
-    let results = await getAstrFeeds();
+    let results;
+    if (config.network.toLowerCase() === "astar") {
+      results = await getAstrFeeds(config);
+    } else if (config.network.toLowerCase() === "shiden") {
+      results = await getSdnFeeds(config);
+    } else {
+      console.error("Invalid network provided. Please provide either 'astar' or 'shiden'.");
+      return;
+    }
     console.log("Results: ", results);
   
     // 2. Filter out results which are older than the time limit, or are zero or null
@@ -70,16 +79,16 @@ async function submitPrice(price, config) {
   }
 }
 
-async function main() {
+async function runUpdates(config) {
   const updateCadenceHours = parseInt(config.updateCadenceHours, 10);
   console.log(`⏰ \u23F0  Starting the price feed service with a cadence of ${updateCadenceHours} hours...`);
 
   // First run to check if we need to submit the price immediately
   const currentHour = new Date().getHours();
   if (currentHour % updateCadenceHours === 0) {
-    const price = await getPrice();
+    const price = await getPrice(config);
     await submitPrice(price, config);
-    console.log("\u1F4B8 Price successfully submitted.")
+    console.log("💸 Price successfully submitted. Waiting for the next update...")
   }
 
   // Run the update periodically
@@ -87,9 +96,9 @@ async function main() {
     const currentHour = new Date().getHours();
     if (currentHour % updateCadenceHours === 0) {
       try {
-        const price = await getPrice();
-        await submitPrice(price);
-        console.log("\u1F4B8 Price successfully submitted.")
+        const price = await getPrice(config);
+        await submitPrice(price, config);
+        console.log("💸 Price successfully submitted. Waiting for the next update...")
       } catch (error) {
         console.error("An error occurred while submitting the price: ", error);
       }
@@ -97,4 +106,26 @@ async function main() {
   }, 1000 * 60 * 60); // Run every hour
 }
 
-main()
+
+async function main() {
+  const argv = yargs
+    .options({
+      config: {
+        alias: 'c',
+        description: 'Path to the config file.',
+        string: true,
+        demandOption: true,
+        global: true,
+        coerce: (arg) => {
+          return path.resolve(arg);
+        }
+      },
+    })
+    .parse();
+
+    const config = require(argv.config);
+
+  runUpdates(config);
+}
+
+main();
