@@ -10,13 +10,15 @@ const PYTH_L2_ABI = require('../res/pythL2Abi.json');
 async function fetchAstarApiPrice(config) {
   try {
     const response = await fetch(config.astarApiURL);
-    const price = await response.json();
-    console.log("Astar API price: " + price);
+    const data = await response.json();
+
+    const price = data.price;
+    const timestamp = new Date(data.lastUpdated);
+    console.log("Astar API price: " + price, "Timestamp: " + timestamp);
 
     return {
       price: price,
-      // TODO: add timestamp when it's implemented
-      timestamp: new Date(),
+      timestamp: timestamp,
       name: "Astar API price"
     };
   } catch (error) {
@@ -57,9 +59,10 @@ async function fetchBandL1Price(config) {
     const result = await contract.getReferenceData(config.nativeCurrencySymbol, 'USD');
 
     // From the Band documentation
-    const DECIMALS = 1_000_000_000_000_000_000;
+    // https://docs.bandchain.org/products/band-standard-dataset/using-band-standard-dataset/contract
+    const DECIMALS = BigInt(1_000_000_000_000_000_000);
 
-    const price = result[0] / DECIMALS;
+    const price = BigInt(result[0]) / DECIMALS;
     const timestamp = new Date(result[1] * 1000);
 
     console.log("Band price: " + price, "Timestamp: " + timestamp);
@@ -100,8 +103,12 @@ async function fetchPythL2Price(config) {
 
     const result = await contract.getPriceUnsafe(priceFeedId);
 
-    const scalingFactor = 10 ** result[2];
-    const price = result[0] * scalingFactor;
+    // Result format can be found here:
+    // - https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/ethereum/sdk/solidity/PythStructs.sol
+    // Price is specified in fixed point format: result[0] * 10^result[2], where result[0] and result[2] are int64
+
+    const scalingFactor = 10 ** parseInt(result[2]);
+    const price = parseInt(result[0]) * scalingFactor;  
     const timestamp = new Date(result[3] * 1000);
 
     console.log("Pyth L2 price: " + price, "Timestamp: " + timestamp);

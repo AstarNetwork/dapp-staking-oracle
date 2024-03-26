@@ -1,6 +1,6 @@
 {
     "network": "shiden",
-    "astarApiURL": "https://api.astar.network/api/v1/token/price/sdn",
+    "astarApiURL": "https://api.astar.network/api/v2/token/price/sdn",
     "diaApiURL": "https://api.diadata.org/v1/assetQuotation/Shiden/0x0000000000000000000000000000000000000000",
     "L1RpcEndpoint": "https://rpc.astar.network",
     "L1WssEndpoint": "ws://127.0.0.1:9944",
