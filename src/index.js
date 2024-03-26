@@ -36,7 +36,7 @@ async function getPrice(config) {
     }
 
     // Sort the results by price
-    results.sort((a, b) => a.price - b.price);
+    results.sort((a, b) => a.price > b.price ? 1 : -1);
 
     // Calculate the median
     let median;
@@ -51,26 +51,14 @@ async function getPrice(config) {
 }
 
 async function submitPrice(price, config) {
-  // 1. Prepare `FixedU128` format for the price.
-  // FixedU128 is divided by a factor of 10^18. Received price is in decimal format, an can easily be less than 1.
-  // The conversion to BigInt therefore has to be done in two steps to reduce precision loss:
-  //
-  // 1. Multiply with a factor of 10^15 (1_000_000_000_000_000) which keeps us inside normal integer range
-  // 2. Multiply with a factor of 10^3 (1_000) to get to the FixedU128 format, converting to BigInt in the process
-  const fixedU128Factor1 = 1_000_000_000_000_000;
-  const fixedU128Factor2 = 1_000;
-  const priceFixedU128 = BigInt(Math.round(price * fixedU128Factor1)) * BigInt(fixedU128Factor2);
-
-  console.log(`Original price: ${price}, FixedU128 price: ${priceFixedU128}`);
-
-  // 2. Prepare the transaction for price feed update
+  // 1. Prepare the transaction for price feed update
   const wsProvider = new WsProvider(config.L1WssEndpoint);
   const api = await ApiPromise.create({ provider: wsProvider });
 
   const signer = getAccount(api, config);
-  const transaction = api.tx.oracle.feedValues([[config.nativeCurrencySymbol, priceFixedU128]]);
+  const transaction = api.tx.oracle.feedValues([[config.nativeCurrencySymbol, price]]);
 
-  // 3. Send it and await finalization
+  // 2. Send it and await finalization
   const result = await sendAndFinalize(transaction, signer);
   if (result.unsubPromise) {
     // Not very elegant, but we need to unsubscribe from the provider to avoid memory leaks

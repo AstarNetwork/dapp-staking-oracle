@@ -6,6 +6,19 @@ const ACURAST_L2_ABI = require('../res/acurastL2Abi.json');
 // Found here: https://github.com/pyth-network/pyth-crosschain/tree/main/target_chains/ethereum/sdk/solidity
 const PYTH_L2_ABI = require('../res/pythL2Abi.json');
 
+function decimalToFixedU128(decimalPrice) {
+  // Prepare `FixedU128` format for the price.
+  // FixedU128 is divided by a factor of 10^18. Received price is in decimal format, an can easily be less than 1.
+  // The conversion to BigInt therefore has to be done in two steps to reduce precision loss:
+  //
+  // 1. Multiply with a factor of 10^15 (1_000_000_000_000_000) which keeps us inside normal integer range
+  // 2. Multiply with a factor of 10^3 (1_000) to get to the FixedU128 format, converting to BigInt in the process
+  const fixedU128Factor1 = 1_000_000_000_000_000;
+  const fixedU128Factor2 = 1_000;
+
+  return BigInt(Math.round(decimalPrice * fixedU128Factor1)) * BigInt(fixedU128Factor2);
+}
+
 // Fetches the price from the Astar Foundation maintained API.
 async function fetchAstarApiPrice(config) {
   try {
@@ -14,10 +27,9 @@ async function fetchAstarApiPrice(config) {
 
     const price = data.price;
     const timestamp = new Date(data.lastUpdated);
-    console.log("Astar API price: " + price, "Timestamp: " + timestamp);
 
     return {
-      price: price,
+      price: decimalToFixedU128(price),
       timestamp: timestamp,
       name: "Astar API price"
     };
@@ -37,10 +49,9 @@ async function fetchDiaApiPrice(config) {
 
     const price = data.Price;
     const timestamp = new Date(data.Time);
-    console.log("DIA API price: " + price, "Timestamp: " + timestamp);
 
     return {
-      price: price,
+      price: decimalToFixedU128(price),
       timestamp: timestamp,
       name: "DIA API price"
     };
@@ -60,12 +71,10 @@ async function fetchBandL1Price(config) {
 
     // From the Band documentation
     // https://docs.bandchain.org/products/band-standard-dataset/using-band-standard-dataset/contract
-    const DECIMALS = BigInt(1_000_000_000_000_000_000);
+    // Price is written in fixed point format, matching the `FixedU128` exactly, with 10^18 decimals.
 
-    const price = BigInt(result[0]) / DECIMALS;
+    const price = BigInt(result[0]);
     const timestamp = new Date(result[1] * 1000);
-
-    console.log("Band price: " + price, "Timestamp: " + timestamp);
 
     return {
       price: price,
@@ -86,8 +95,6 @@ async function fetchAcurastL2Price(config) {
   const contract = new ethers.Contract('0xde4F97786EAB4e47b96A0A65EdD7755895077073', ACURAST_L2_ABI, provider);
 
   const result = await contract.description();
-
-  console.log("Acurast L2 price: " + result);
 }
 
 // Fetches the price from the L2 on-chain Pyth oracle.
@@ -107,11 +114,17 @@ async function fetchPythL2Price(config) {
     // - https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/ethereum/sdk/solidity/PythStructs.sol
     // Price is specified in fixed point format: result[0] * 10^result[2], where result[0] and result[2] are int64
 
-    const scalingFactor = 10 ** parseInt(result[2]);
-    const price = parseInt(result[0]) * scalingFactor;  
-    const timestamp = new Date(result[3] * 1000);
+    // `FixedU128` has 10^18 decimals so when converting, we need to account for that
+    const scalingFactor = parseInt(result[2]) + 18;
 
-    console.log("Pyth L2 price: " + price, "Timestamp: " + timestamp);
+    let tempPrice;
+    if (scalingFactor >= 0) {
+      tempPrice = BigInt(result[0]) * BigInt(10 ** scalingFactor);
+    } else {
+      tempPrice = BigInt(result[0]) / BigInt(10 ** -scalingFactor);
+    }
+    const price = tempPrice;
+    const timestamp = new Date(result[3] * 1000);
 
     return {
       price: price,
