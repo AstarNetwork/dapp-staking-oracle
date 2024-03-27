@@ -34,7 +34,9 @@ First make sure to prepare the configuration file that will be used.
 
 Install all of the required dependencies with `yarn install`.
 
-Run the program with `yarn start -c <path-to-config-file>`.
+Run the program with `SEED='...' yarn start -c <path-to-config-file>`.
+
+(`SEED` can be omitted if user wants to run as `Alice`)
 
 ## Config
 
@@ -47,4 +49,8 @@ The `updateCadenceHours` parameter specifies how often should new price feed be 
 
 The `nativeCurrencySymbol` is used to specify on-chain enum value of the native currency ticker, e.g. `ASTR` or `SDN`.
 
-`seedPhrase` can be used to specify custom seed phrase to use for deriving the transaction signer key-pair. If omitted, `Alice` will be used.
+## Env
+
+Unless in test environment, user should specify the seed phrase or the private key to derive the account which will submit price updates to the chain.
+
+The variable is `SEED`.

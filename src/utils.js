@@ -5,15 +5,12 @@ function getAccount(api, config) {
       type: "sr25519",
       ss58Format: api.registry.chainSS58,
     });
-  
-    const maybeSeed = process.env["SEED"];
-    if (config.seedPhrase) {
-      console.info("Creating an account from the provided see phrase.");
-      return keyring.addFromUri(config.seedPhrase);
-    } else {
-      console.info("No seed provided, using Alice.");
-      return keyring.addFromUri("//Alice");
-    }
+
+    const ALICE = "//Alice";
+    const accountPrivateKey = process.env.SEED || ALICE;
+    console.log(accountPrivateKey === ALICE ? "No seed provided, using Alice." : "Creating an account from the provided seed phrase.");
+    
+    return keyring.addFromUri(accountPrivateKey);
   }
 
   async function sendAndFinalize(tx, signer, options) {
