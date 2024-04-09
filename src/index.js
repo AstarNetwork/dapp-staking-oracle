@@ -41,7 +41,7 @@ async function getPrice(config) {
     // Calculate the median
     let median;
     if (results.length % 2 === 0) {
-      median = (results[results.length / 2 - 1].price + results[results.length / 2].price) / 2;
+      median = (results[results.length / 2 - 1].price + results[results.length / 2].price) / BigInt(2);
     } else {
       median = results[(results.length - 1) / 2].price;
     }
