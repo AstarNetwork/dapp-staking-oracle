@@ -65,6 +65,21 @@ async function submitPrice(price, config) {
     const unsub = await result.unsubPromise;
     unsub();
   }
+
+  return result.success;
+}
+
+async function fetchAndSubmitPrice(config) {
+  try {
+    const price = await getPrice(config);
+    const success = await submitPrice(price, config);
+    console.log("💸 Price update transaction finalized. Waiting for the next update...");
+    if (!success) {
+      console.error("🚨 Transaction failed, notify developers to check the error.");
+    }
+  } catch (error) {
+    console.error("An error occurred while submitting the price: ", error);
+  }
 }
 
 async function runUpdates(config) {
@@ -74,22 +89,14 @@ async function runUpdates(config) {
   // First run to check if we need to submit the price immediately
   const currentHour = new Date().getHours();
   if (currentHour % updateCadenceHours === 0) {
-    const price = await getPrice(config);
-    await submitPrice(price, config);
-    console.log("💸 Price successfully submitted. Waiting for the next update...")
+    await fetchAndSubmitPrice(config);
   }
 
   // Run the update periodically
   setInterval(async () => {
     const currentHour = new Date().getHours();
     if (currentHour % updateCadenceHours === 0) {
-      try {
-        const price = await getPrice(config);
-        await submitPrice(price, config);
-        console.log("💸 Price successfully submitted. Waiting for the next update...")
-      } catch (error) {
-        console.error("An error occurred while submitting the price: ", error);
-      }
+      await fetchAndSubmitPrice(config);
     }
   }, 1000 * 60 * 60); // Run every hour
 }
