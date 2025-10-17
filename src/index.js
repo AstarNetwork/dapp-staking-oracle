@@ -103,7 +103,7 @@ async function runUpdates(config) {
 
 
 async function main() {
-  const argv = yargs
+  const argv = await yargs(process.argv.slice(2))
     .options({
       config: {
         alias: 'c',
@@ -116,9 +116,9 @@ async function main() {
         }
       },
     })
-    .parse();
+    .parseAsync();
 
-    const config = require(argv.config);
+  const config = require(argv.config);
 
   runUpdates(config);
 }
