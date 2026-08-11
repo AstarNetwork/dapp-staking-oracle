@@ -1,3 +1,6 @@
+> [!WARNING]
+> **Repository Archived:** This project is no longer actively maintained, price oracles are not longer used since `runtime-2100` and [Tokenomics 3.0 dApp Staking simplification](https://github.com/AstarNetwork/Astar/pull/1586)
+
 # dApp Staking Oracle Service
 
 Simple script to ensure periodic native currency (ASTR or SDN) price feed to the network.
